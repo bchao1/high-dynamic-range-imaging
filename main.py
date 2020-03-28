@@ -87,8 +87,13 @@ def solve_debevec(z, exp, w, l = 10):
     return g, E
 
 def get_radiance_map(images, g, exp, w):
-    h, w = images[0].shape
-    rad = np.zeros((h, w), dtype = np.uint8)
+    _h, _w = images[0].shape
+    images = np.array(images)
+    E = []
+    for i, img in enumerate(images):
+        E.append(g[img] - exp[i])
+    rad = np.average(E, axis=0, weights=w[images])
+    return rad
     # TODO
 
 images, exposures = [], []
@@ -103,12 +108,18 @@ pixel_positions = sample_pixels(image_height, image_width)
 
 l = 5
 w = z_weights()
-print(w)
+# print(w)
 b = np.log(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
 g, E = solve_debevec(z, b, w, l)
 
+r_map_r = get_radiance_map([img[:,:,0] for img in images], g, b, w)
+r_map_g = get_radiance_map([img[:,:,1] for img in images], g, b, w)
+r_map_b = get_radiance_map([img[:,:,2] for img in images], g, b, w)
+r_map = np.transpose(np.exp((np.concatenate( ([r_map_r], [r_map_g], [r_map_b]), axis = 0))), (1,2,0))
+cv2.imwrite('test.hdr', r_map)
+print(r_map.shape)
 
-#plt.plot(g, np.arange(0, 256))
-#plt.show()
+plt.plot(g, np.arange(0, 256))
+plt.show()
 
