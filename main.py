@@ -28,7 +28,7 @@ def get_rgb_channels(image):
     ''' Image dimension is (H, W, C), where C is in RGB order '''
     return image[:,:,0], image[:,:,1], image[:,:,2] 
 
-def sample_pixels(h, w):
+def sample_pixels(h, w, x = 20, y = 20):
     ''' 
         Sample pixel positions in a h * w image. 
 
@@ -36,9 +36,9 @@ def sample_pixels(h, w):
     '''
     # Simple equidistant 5 * 10 sampling at this time. Can be modified.
     pos = []
-    h_step, w_step = h // (5 + 1), w // (10 + 1)
-    for i in range(1, 6):
-        for j in range(1, 11):
+    h_step, w_step = h // (x + 1), w // (y + 1)
+    for i in range(1, x+1):
+        for j in range(1, y+1):
             pos.append((i * h_step, j * w_step))
     return pos
         
@@ -57,7 +57,7 @@ def get_z(images, pixel_positions):
             z[i, j] = img[x, y]
     return z
 
-def solve_debevec(z, exp, w, l = 10):
+def solve_debevec(z, exp, w, l = 5):
     '''
         Algorithm from Debevec 1997.
         "Recovering High Dynamic Range Radiance Maps from Photographs".
@@ -109,6 +109,6 @@ z = get_z([img[:,:,0] for img in images], pixel_positions)
 g, E = solve_debevec(z, b, w, l)
 
 
-#plt.plot(g, np.arange(0, 256))
-#plt.show()
+plt.plot(g, np.arange(0, 256))
+plt.show()
 
