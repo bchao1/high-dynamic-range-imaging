@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from PIL.ExifTags import TAGS
+from matplotlib import pyplot as plt
 
 ''' Some configs. '''
 IMAGE_DIR = 'images/set_1/jpg'
@@ -27,7 +28,11 @@ def get_rgb_channels(image):
     return image[:,:,0], image[:,:,1], image[:,:,2] 
 
 def sample_pixels(h, w):
-    ''' Sample pixel positions in a h * w image. '''
+    ''' 
+        Sample pixel positions in a h * w image. 
+
+        Returns a list of tuples representing pixel positions.
+    '''
     # Simple equidistant 5 * 10 sampling at this time. Can be modified.
     pos = []
     h_step, w_step = h // (5 + 1), w // (10 + 1)
@@ -39,19 +44,47 @@ def sample_pixels(h, w):
 def z_weights(zmin = 0, zmax = 255):
     zmid = (zmin + zmax) // 2
     def hat(z):
-        return z - zmin if z <= zmin else zmax - z
+        return z - zmin if z <= zmid else zmax - z
     return np.array([hat(z) for z in range(zmin, zmax + 1)], dtype = np.float)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
     h, w = images[0].shape
-    z = np.zeros((len(pixel_positions), len(images)), dtype = np.float)
+    z = np.zeros((len(pixel_positions), len(images)), dtype = np.uint8)
     for i, (x, y) in enumerate(pixel_positions):
         for j, img in enumerate(images):
             z[i, j] = img[x, y]
     return z
 
-
+def solve_debevec(z, exp, w, l = 10):
+    '''
+        Algorithm from Debevec 1997.
+        "Recovering High Dynamic Range Radiance Maps from Photographs".
+    '''
+    n, p = z.shape
+    assert(len(exp) == p and len(w) == 256)
+    A = np.zeros((n * p + 1 + 254, 256 + n))
+    b = np.zeros((A.shape[0], 1))
+    k = 0
+    for i, row in enumerate(z):
+        for j, z_ij in enumerate(row):
+            w_ij = w[z_ij] # weighted pixel value
+            A[k, z_ij] = w_ij
+            A[k, i + 256] = -w_ij
+            b[k, 0] = w_ij * exp[j]
+            k += 1
+    A[k, 127] = 1
+    k += 1
+    for i in range(1, 255): # iterate from 1 to 254
+        A[k, i - 1] = l * w[i - 1]
+        A[k, i] = -2 * l * w[i]
+        A[k, i + 1] = l * w[i + 1]
+        k += 1
+    x = np.linalg.lstsq(A, b, rcond = None)[0].ravel()
+    g = x[:256]
+    E = x[256:]
+    return g, E
+    
 images, exposures = [], []
 for f in image_files:
     image, exposure = read_image(f)
@@ -62,8 +95,13 @@ image_height, image_width, _ = images[0].shape
 
 pixel_positions = sample_pixels(image_height, image_width)
 
-l = 1
-w_z = z_weights()
-b = np.array(exposures, dtype = np.float)
+l = 10
+w = z_weights()
+b = np.log2(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
-print(z.shape)
+g, E = solve_debevec(z, b, w, l)
+
+
+plt.plot(g, np.arange(0, 256))
+plt.show()
+
