@@ -21,7 +21,8 @@ def read_image(file_name, image_dir = IMAGE_DIR, resize = False):
     img = Image.open(file_path)
     exifs = get_labeled_exif(img._getexif())
     exposure_sec, exposure_base = exifs['ExposureTime']
-    return np.asarray(img), exposure_sec * 1.0 / exposure_base
+    exposure_time = exposure_sec * 1.0 / exposure_base
+    return np.asarray(img), exposure_time
 
 def get_rgb_channels(image):
     ''' Image dimension is (H, W, C), where C is in RGB order '''
@@ -45,7 +46,7 @@ def z_weights(zmin = 0, zmax = 255):
     zmid = (zmin + zmax) // 2
     def hat(z):
         return z - zmin if z <= zmid else zmax - z
-    return np.array([hat(z) for z in range(zmin, zmax + 1)], dtype = np.float)
+    return np.array([hat(z) + 1 for z in range(zmin, zmax + 1)], dtype = np.float)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
@@ -84,7 +85,12 @@ def solve_debevec(z, exp, w, l = 10):
     g = x[:256]
     E = x[256:]
     return g, E
-    
+
+def get_radiance_map(images, g, exp, w):
+    h, w = images[0].shape
+    rad = np.zeros((h, w), dtype = np.uint8)
+    # TODO
+
 images, exposures = [], []
 for f in image_files:
     image, exposure = read_image(f)
@@ -95,13 +101,14 @@ image_height, image_width, _ = images[0].shape
 
 pixel_positions = sample_pixels(image_height, image_width)
 
-l = 10
+l = 5
 w = z_weights()
-b = np.log2(np.array(exposures, dtype = np.float))
+print(w)
+b = np.log(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
 g, E = solve_debevec(z, b, w, l)
 
 
-plt.plot(g, np.arange(0, 256))
-plt.show()
+#plt.plot(g, np.arange(0, 256))
+#plt.show()
 
