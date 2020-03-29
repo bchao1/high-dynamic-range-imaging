@@ -93,6 +93,7 @@ def get_radiance_map(images, g, exp, w):
     for i, img in enumerate(images):
         E.append(g[img] - exp[i])
     rad = np.average(E, axis=0, weights=w[images])
+    print(rad.shape)
     return rad
     # TODO
 
