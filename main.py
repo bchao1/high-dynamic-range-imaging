@@ -35,10 +35,12 @@ def sample_pixels(h, w):
         Returns a list of tuples representing pixel positions.
     '''
     # Simple equidistant 5 * 10 sampling at this time. Can be modified.
+    n = 15
+    m = 30
     pos = []
-    h_step, w_step = h // (5 + 1), w // (10 + 1)
-    for i in range(1, 6):
-        for j in range(1, 11):
+    h_step, w_step = h // (n + 1), w // (m + 1)
+    for i in range(1, n+1):
+        for j in range(1, m+1):
             pos.append((i * h_step, j * w_step))
     return pos
         
@@ -46,7 +48,7 @@ def z_weights(zmin = 0, zmax = 255):
     zmid = (zmin + zmax) // 2
     def hat(z):
         return z - zmin if z <= zmid else zmax - z
-    return np.array([hat(z) + 1 for z in range(zmin, zmax + 1)], dtype = np.float)
+    return np.array([hat(z) + 10 for z in range(zmin, zmax + 1)], dtype = np.float)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
@@ -92,7 +94,7 @@ def get_radiance_map(images, g, exp, w):
     E = []
     for i, img in enumerate(images):
         # print( g[img].shape)
-        E.append(g[img] +4 - exp[i])
+        E.append(g[img] - exp[i])
     rad = np.average(E, axis=0, weights=w[images])
     print(rad.shape)
     return rad
@@ -108,20 +110,22 @@ image_height, image_width, _ = images[0].shape
 
 pixel_positions = sample_pixels(image_height, image_width)
 
-l = 5
+l = 20
 w = z_weights()
 # print(w)
 b = np.log(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
 g1, E = solve_debevec(z, b, w, l)
-r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
 z = get_z([img[:,:,1] for img in images], pixel_positions)
 g2, E = solve_debevec(z, b, w, l)
-r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
 z = get_z([img[:,:,2] for img in images], pixel_positions)
 g3, E = solve_debevec(z, b, w, l)
+r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
+r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
 r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
 r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
+r_map_mean = np.mean( r_map )
+r_map *= 40/r_map_mean
 cv2.imwrite('test.hdr', r_map)
 print(r_map.shape)
 
