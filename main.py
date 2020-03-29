@@ -77,9 +77,9 @@ def solve_debevec(z, exp, w, l = 10):
     A[k, 127] = 1
     k += 1
     for i in range(1, 255): # iterate from 1 to 254
-        A[k, i - 1] = l * w[i - 1]
+        A[k, i - 1] = l * w[i]
         A[k, i] = -2 * l * w[i]
-        A[k, i + 1] = l * w[i + 1]
+        A[k, i + 1] = l * w[i]
         k += 1
     x = np.linalg.lstsq(A, b, rcond = None)[0].ravel()
     g = x[:256]
@@ -113,15 +113,18 @@ w = z_weights()
 # print(w)
 b = np.log(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
-g, E = solve_debevec(z, b, w, l)
-
-r_map_r = get_radiance_map([img[:,:,0] for img in images], g, b, w)
-r_map_g = get_radiance_map([img[:,:,1] for img in images], g, b, w)
-r_map_b = get_radiance_map([img[:,:,2] for img in images], g, b, w)
+g1, E = solve_debevec(z, b, w, l)
+r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
+z = get_z([img[:,:,1] for img in images], pixel_positions)
+g2, E = solve_debevec(z, b, w, l)
+r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
+z = get_z([img[:,:,2] for img in images], pixel_positions)
+g3, E = solve_debevec(z, b, w, l)
+r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
 r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
 cv2.imwrite('test.hdr', r_map)
 print(r_map.shape)
 
-plt.plot(g, np.arange(0, 256))
+plt.plot(g1, np.arange(0, 256), 'r', g2, np.arange(0, 256), 'g', g3, np.arange(0, 256), 'b')
 plt.show()
 
