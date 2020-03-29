@@ -91,7 +91,8 @@ def get_radiance_map(images, g, exp, w):
     images = np.array(images)
     E = []
     for i, img in enumerate(images):
-        E.append(g[img] - exp[i])
+        # print( g[img].shape)
+        E.append(g[img] +4 - exp[i])
     rad = np.average(E, axis=0, weights=w[images])
     print(rad.shape)
     return rad
@@ -117,7 +118,7 @@ g, E = solve_debevec(z, b, w, l)
 r_map_r = get_radiance_map([img[:,:,0] for img in images], g, b, w)
 r_map_g = get_radiance_map([img[:,:,1] for img in images], g, b, w)
 r_map_b = get_radiance_map([img[:,:,2] for img in images], g, b, w)
-r_map = np.transpose(np.exp((np.concatenate( ([r_map_r], [r_map_g], [r_map_b]), axis = 0))), (1,2,0))
+r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
 cv2.imwrite('test.hdr', r_map)
 print(r_map.shape)
 
