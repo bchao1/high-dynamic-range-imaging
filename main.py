@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 
 ''' Some configs. '''
 IMAGE_DIR = 'images/set_1/jpg'
+RESULT_DIR = 'results'
 image_files = sorted(os.listdir(IMAGE_DIR))
 
 def get_labeled_exif(exif):
@@ -15,13 +16,16 @@ def get_labeled_exif(exif):
         labeled[TAGS.get(key)] = val
     return labeled
 
-def read_image(file_name, image_dir = IMAGE_DIR, resize = False):
+def read_image(file_name, image_dir = IMAGE_DIR, scale = None):
     file_path = os.path.join(image_dir, file_name)
     print("Reading image {} ...".format(file_path))
     img = Image.open(file_path)
+    h, w = img.size
     exifs = get_labeled_exif(img._getexif())
     exposure_sec, exposure_base = exifs['ExposureTime']
     exposure_time = exposure_sec * 1.0 / exposure_base
+    if scale:
+        img = img.resize((h // scale, w // scale), Image.LANCZOS)
     return np.asarray(img), exposure_time
 
 def get_rgb_channels(image):
@@ -45,7 +49,7 @@ def z_weights(zmin = 0, zmax = 255):
     zmid = (zmin + zmax) // 2
     def hat(z):
         return z - zmin if z <= zmid else zmax - z
-    return np.array([hat(z) + 10 for z in range(zmin, zmax + 1)], dtype = np.float32)
+    return np.array([hat(z) + 1 for z in range(zmin, zmax + 1)], dtype = np.float32)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
@@ -86,45 +90,45 @@ def solve_debevec(z, exp, w, l = 5):
     return g, E
 
 def get_radiance_map(images, g, exp, w):
+    print("Processing radiance map ...")
     _h, _w = images[0].shape
     images = np.array(images)
     E = []
     for i, img in enumerate(images):
-        # print( g[img].shape)
         E.append(g[img] - exp[i])
     rad = np.average(E, axis=0, weights=w[images])
-    print(rad.shape)
     return rad
-    # TODO
 
 images, exposures = [], []
 for f in image_files:
-    image, exposure = read_image(f)
+    image, exposure = read_image(f, scale = 5)
     images.append(image)
     exposures.append(exposure)
 
-image_height, image_width, _ = images[0].shape
+if __name__ == '__main__':
+    if not os.path.exists(RESULT_DIR):
+        os.makedirs(RESULT_DIR)
 
-pixel_positions = sample_pixels(image_height, image_width)
+    image_height, image_width, _ = images[0].shape
+    pixel_positions = sample_pixels(image_height, image_width)
 
-l = 20
-w = z_weights()
-# print(w)
-b = np.log(np.array(exposures, dtype = np.float))
-z = get_z([img[:,:,0] for img in images], pixel_positions)
-g1, E = solve_debevec(z, b, w, l)
-z = get_z([img[:,:,1] for img in images], pixel_positions)
-g2, E = solve_debevec(z, b, w, l)
-z = get_z([img[:,:,2] for img in images], pixel_positions)
-g3, E = solve_debevec(z, b, w, l)
-r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
-r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
-r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
-r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
+    l = 20
+    w = z_weights()
 
-cv2.imwrite('test.hdr', r_map.astype(np.float32))
-# print(r_map)
+    b = np.log(np.array(exposures, dtype = np.float))
+    z = get_z([img[:,:,0] for img in images], pixel_positions)
+    g1, E = solve_debevec(z, b, w, l)
+    z = get_z([img[:,:,1] for img in images], pixel_positions)
+    g2, E = solve_debevec(z, b, w, l)
+    z = get_z([img[:,:,2] for img in images], pixel_positions)
+    g3, E = solve_debevec(z, b, w, l)
 
-plt.plot(g1, np.arange(0, 256), 'r', g2, np.arange(0, 256), 'g', g3, np.arange(0, 256), 'b')
-plt.show()
+    r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
+    r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
+    r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
+    r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
 
+    cv2.imwrite(os.path.join(RESULT_DIR, 'test.hdr'), r_map.astype(np.float32))
+
+    plt.plot(g1, np.arange(0, 256), 'r', g2, np.arange(0, 256), 'g', g3, np.arange(0, 256), 'b')
+    plt.savefig(os.path.join(RESULT_DIR, 'exposure.png'))
