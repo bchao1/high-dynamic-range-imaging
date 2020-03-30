@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 ''' Some configs. '''
 IMAGE_DIR = 'images/set_1/jpg'
 RESULT_DIR = 'results'
-image_files = sorted(os.listdir(IMAGE_DIR))
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -92,13 +91,14 @@ def get_radiance_map(images, g, exp, w):
     return rad
 
 
+l = 20
+w = z_weights()
+
 if __name__ == '__main__':
     if not os.path.exists(RESULT_DIR):
         os.makedirs(RESULT_DIR)
 
-    l = 20
-    w = z_weights()
-
+    image_files = sorted(os.listdir(IMAGE_DIR))
     images, exposures = [], []
     for f in image_files:
         image, exposure = read_image(f, scale = 5)
