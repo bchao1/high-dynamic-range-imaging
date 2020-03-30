@@ -40,8 +40,8 @@ def sample_pixels(h, w, x = 20, y = 20):
     '''
     pos = []
     h_step, w_step = h // (x + 1), w // (y + 1)
-    for i in range(1, x+1):
-        for j in range(1, y+1):
+    for i in range(1, x + 1):
+        for j in range(1, y + 1):
             pos.append((i * h_step, j * w_step))
     return pos
         
@@ -99,36 +99,35 @@ def get_radiance_map(images, g, exp, w):
     rad = np.average(E, axis=0, weights=w[images])
     return rad
 
-images, exposures = [], []
-for f in image_files:
-    image, exposure = read_image(f, scale = 5)
-    images.append(image)
-    exposures.append(exposure)
 
 if __name__ == '__main__':
     if not os.path.exists(RESULT_DIR):
         os.makedirs(RESULT_DIR)
 
-    image_height, image_width, _ = images[0].shape
-    pixel_positions = sample_pixels(image_height, image_width)
-
     l = 20
     w = z_weights()
 
-    b = np.log(np.array(exposures, dtype = np.float))
-    z = get_z([img[:,:,0] for img in images], pixel_positions)
-    g1, E = solve_debevec(z, b, w, l)
-    z = get_z([img[:,:,1] for img in images], pixel_positions)
-    g2, E = solve_debevec(z, b, w, l)
-    z = get_z([img[:,:,2] for img in images], pixel_positions)
-    g3, E = solve_debevec(z, b, w, l)
+    images, exposures = [], []
+    for f in image_files:
+        image, exposure = read_image(f, scale = 5)
+        images.append(image)
+        exposures.append(exposure)
 
-    r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
-    r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
-    r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
-    r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
+    b = np.log(np.array(exposures, dtype = np.float32))
+
+    image_height, image_width, _ = images[0].shape
+    pixel_positions = sample_pixels(image_height, image_width)
+
+    radiance_maps = []
+    colors = ['r', 'g', 'b']
+    plt.figure()
+    for i in range(2, -1, -1): # Process in BGR channel order
+        z = get_z([img[:,:,i] for img in images], pixel_positions)
+        g, _ = solve_debevec(z, b, w, l)
+        r = get_radiance_map([img[:,:,i] for img in images], g, b, w)
+        radiance_maps.append(r)
+        plt.plot(g, range(256), colors[i])
+    r_map = np.transpose(np.exp(np.stack(radiance_maps)), (1, 2, 0))
 
     cv2.imwrite(os.path.join(RESULT_DIR, 'test.hdr'), r_map.astype(np.float32))
-
-    plt.plot(g1, np.arange(0, 256), 'r', g2, np.arange(0, 256), 'g', g3, np.arange(0, 256), 'b')
     plt.savefig(os.path.join(RESULT_DIR, 'exposure.png'))
