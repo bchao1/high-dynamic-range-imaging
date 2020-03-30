@@ -28,10 +28,6 @@ def read_image(file_name, image_dir = IMAGE_DIR, scale = None):
         img = img.resize((h // scale, w // scale), Image.LANCZOS)
     return np.asarray(img), exposure_time
 
-def get_rgb_channels(image):
-    ''' Image dimension is (H, W, C), where C is in RGB order '''
-    return image[:,:,0], image[:,:,1], image[:,:,2] 
-
 def sample_pixels(h, w, x = 20, y = 20):
     ''' 
         Sample pixel positions in a h * w image. 
@@ -80,14 +76,10 @@ def solve_debevec(z, exp, w, l = 5):
     A[k, 127] = 1
     k += 1
     for i in range(1, 255): # iterate from 1 to 254
-        A[k, i - 1] = l * w[i]
-        A[k, i] = -2 * l * w[i]
-        A[k, i + 1] = l * w[i]
+        A[k, i - 1 : i + 2] = l * w[i] * np.array([1, -2, 1])
         k += 1
     x = np.linalg.lstsq(A, b, rcond = None)[0].ravel()
-    g = x[:256]
-    E = x[256:]
-    return g, E
+    return x[:256] # return only g(0) ~ g(255)
 
 def get_radiance_map(images, g, exp, w):
     print("Processing radiance map ...")
@@ -122,9 +114,10 @@ if __name__ == '__main__':
     colors = ['r', 'g', 'b']
     plt.figure()
     for i in range(2, -1, -1): # Process in BGR channel order
-        z = get_z([img[:,:,i] for img in images], pixel_positions)
-        g, _ = solve_debevec(z, b, w, l)
-        r = get_radiance_map([img[:,:,i] for img in images], g, b, w)
+        channels = [img[:,:,i] for img in images] # ith channel of each image
+        z = get_z(channels, pixel_positions)
+        g = solve_debevec(z, b, w, l)
+        r = get_radiance_map(channels, g, b, w)
         radiance_maps.append(r)
         plt.plot(g, range(256), colors[i])
     r_map = np.transpose(np.exp(np.stack(radiance_maps)), (1, 2, 0))
