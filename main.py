@@ -34,7 +34,6 @@ def sample_pixels(h, w, x = 20, y = 20):
 
         Returns a list of tuples representing pixel positions.
     '''
-    # Simple equidistant 5 * 10 sampling at this time. Can be modified.
     pos = []
     h_step, w_step = h // (x + 1), w // (y + 1)
     for i in range(1, x+1):
@@ -46,7 +45,7 @@ def z_weights(zmin = 0, zmax = 255):
     zmid = (zmin + zmax) // 2
     def hat(z):
         return z - zmin if z <= zmid else zmax - z
-    return np.array([hat(z) + 1 for z in range(zmin, zmax + 1)], dtype = np.float)
+    return np.array([hat(z) + 10 for z in range(zmin, zmax + 1)], dtype = np.float32)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
@@ -77,9 +76,9 @@ def solve_debevec(z, exp, w, l = 5):
     A[k, 127] = 1
     k += 1
     for i in range(1, 255): # iterate from 1 to 254
-        A[k, i - 1] = l * w[i - 1]
+        A[k, i - 1] = l * w[i]
         A[k, i] = -2 * l * w[i]
-        A[k, i + 1] = l * w[i + 1]
+        A[k, i + 1] = l * w[i]
         k += 1
     x = np.linalg.lstsq(A, b, rcond = None)[0].ravel()
     g = x[:256]
@@ -87,8 +86,15 @@ def solve_debevec(z, exp, w, l = 5):
     return g, E
 
 def get_radiance_map(images, g, exp, w):
-    h, w = images[0].shape
-    rad = np.zeros((h, w), dtype = np.uint8)
+    _h, _w = images[0].shape
+    images = np.array(images)
+    E = []
+    for i, img in enumerate(images):
+        # print( g[img].shape)
+        E.append(g[img] - exp[i])
+    rad = np.average(E, axis=0, weights=w[images])
+    print(rad.shape)
+    return rad
     # TODO
 
 images, exposures = [], []
@@ -101,14 +107,24 @@ image_height, image_width, _ = images[0].shape
 
 pixel_positions = sample_pixels(image_height, image_width)
 
-l = 5
+l = 20
 w = z_weights()
-print(w)
+# print(w)
 b = np.log(np.array(exposures, dtype = np.float))
 z = get_z([img[:,:,0] for img in images], pixel_positions)
-g, E = solve_debevec(z, b, w, l)
+g1, E = solve_debevec(z, b, w, l)
+z = get_z([img[:,:,1] for img in images], pixel_positions)
+g2, E = solve_debevec(z, b, w, l)
+z = get_z([img[:,:,2] for img in images], pixel_positions)
+g3, E = solve_debevec(z, b, w, l)
+r_map_r = get_radiance_map([img[:,:,0] for img in images], g1, b, w)
+r_map_g = get_radiance_map([img[:,:,1] for img in images], g2, b, w)
+r_map_b = get_radiance_map([img[:,:,2] for img in images], g3, b, w)
+r_map = np.transpose(np.exp((np.concatenate( ([r_map_b], [r_map_g], [r_map_r]), axis = 0))), (1,2,0))
 
+cv2.imwrite('test.hdr', r_map.astype(np.float32))
+# print(r_map)
 
-plt.plot(g, np.arange(0, 256))
+plt.plot(g1, np.arange(0, 256), 'r', g2, np.arange(0, 256), 'g', g3, np.arange(0, 256), 'b')
 plt.show()
 
