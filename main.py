@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from PIL.ExifTags import TAGS
 from matplotlib import pyplot as plt
+import lib.hat_functions as hat_func
 
 ''' Some configs. '''
 IMAGE_DIR = 'images/set_1/jpg'
@@ -40,11 +41,15 @@ def sample_pixels(h, w, x = 20, y = 20):
             pos.append((i * h_step, j * w_step))
     return pos
         
-def z_weights(zmin = 0, zmax = 255):
-    zmid = (zmin + zmax) // 2
-    def hat(z):
-        return z - zmin if z <= zmid else zmax - z
-    return np.array([hat(z) + 1 for z in range(zmin, zmax + 1)], dtype = np.float32)
+def z_weights(zmin = 0, zmax = 255, hat = 'linear'):
+    f = None
+    if hat == 'linear':
+        f = hat_func.linear_hat(zmin, zmax)
+    elif hat == 'sin':
+        f = hat_func.sin_hat(zmin, zmax)
+    elif hat == 'gaussian':
+        f = hat_func.gaussian_hat(zmin, zmax)
+    return np.array([f(z) for z in range(zmin, zmax + 1)], dtype = np.float32)
 
 def get_z(images, pixel_positions):
     ''' Images should be a list of 1-channel (R / G / B) images. '''
@@ -92,7 +97,7 @@ def get_radiance_map(images, g, exp, w):
 
 
 l = 20
-w = z_weights()
+w = z_weights(hat = 'gaussian')
 
 if __name__ == '__main__':
     if not os.path.exists(RESULT_DIR):
@@ -116,8 +121,8 @@ if __name__ == '__main__':
     for i in range(2, -1, -1): # Process in BGR channel order
         channels = [img[:,:,i] for img in images] # ith channel of each image
         z = get_z(channels, pixel_positions)
-        g = solve_debevec(z, b, w, l)
-        r = get_radiance_map(channels, g, b, w)
+        g = solve_debevec(z, b, w, l) # retrieve mapping function
+        r = get_radiance_map(channels, g, b, w) # retrieve channel-wise radiance map
         radiance_maps.append(r)
         plt.plot(g, range(256), colors[i])
     r_map = np.transpose(np.exp(np.stack(radiance_maps)), (1, 2, 0))
