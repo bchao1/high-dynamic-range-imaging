@@ -39,6 +39,8 @@ def sample_pixels(h, w, x = 20, y = 20):
         
 def z_weights(zmin = 0, zmax = 255, hat = 'linear'):
     f = None
+    if hat == 'none':
+        f = lambda z: z
     if hat == 'linear':
         f = hat_func.linear_hat(zmin, zmax)
     elif hat == 'sin':

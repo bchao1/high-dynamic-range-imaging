@@ -9,7 +9,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', type = float, help = 'Lambda factor in Debevec\'s method.', default = 20)
     parser.add_argument('--scale', type = float, help = 'Downscaling factor of image.', default = 1)
     parser.add_argument('--hat', type = str, help = 'Hatting function for pixel values', 
-        choices = ['gaussian', 'linear', 'sin'], default = 'linear')
+        choices = ['gaussian', 'linear', 'sin', 'none'], default = 'linear')
     args = parser.parse_args()
     sesssion_dir = '{}_{}'.format(args.l, args.hat)
     output_dir = os.path.join(args.output_dir, sesssion_dir)

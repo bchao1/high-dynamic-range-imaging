@@ -87,12 +87,14 @@ Tone mapped 的影像：
 
 ![img](./images/hat.png)
 
-實驗中，我們固定 lambda = 20，並使用 Mantuik '06 的演算法來 tone mapping，觀察 weighting function 對最終結果的影響。
+實驗中，我們固定 lambda = 20，並使用 Mantuik '06 的演算法來 tone mapping，觀察 weighting function 對最終結果的影響，並把沒有 weighting 的當成對照組。
 
-|             | Linear                                   | Sin                                   | Gaussian                                   |
-| ----------- | ---------------------------------------- | ------------------------------------- | ------------------------------------------ |
-| g           | ![img](./tests/20.0_linear/exposure.png) | ![img](./tests/20.0_sin/exposure.png) | ![img](./tests/20.0_gaussian/exposure.png) |
-| Tone mapped | ![img](./tests/20.0_linear/result.png)   | ![img](./tests/20.0_sin/result.jpg)   | ![img](./tests/20.0_gaussian/result.png)   |
+|          | g                                          | Tone mapped                              |
+| -------- | ------------------------------------------ | ---------------------------------------- |
+| None     | ![img](./tests/20.0_none/exposure.png)     | ![img](./tests/20.0_none/result.png)     |
+| Linear   | ![img](./tests/20.0_linear/exposure.png)   | ![img](./tests/20.0_linear/result.png)   |
+| Gaussian | ![img](./tests/20.0_gaussian/exposure.png) | ![img](./tests/20.0_gaussian/result.png) |
+| Sin      | ![img](./tests/20.0_sin/exposure.png)      | ![img](./tests/20.0_sin/result.jpg)      |
 
 其實結果並沒有差非常多。
 
