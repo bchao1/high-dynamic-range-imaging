@@ -1,22 +1,14 @@
 import numpy as np 
+import cv2
 from matplotlib import pyplot as plt 
 
-def linear_hat(zmin, zmax):
-    zmid = zmin + (zmax - zmin) // 2
-    def hat(z):
-        return (z - zmin if z <= zmid else zmax - z) + 1
-    return hat
-    
-def sin_hat(zmin, zmax):
-    width = zmax - zmin
-    def hat(z):
-        return zmax * np.sin((z - zmin) * np.pi / width) + 1
-    return hat
+def alignment(images, std_img):
+    images_move = np.zeros((len(images), 2))
+    neighbors = [[0, 0], [0, -1], [0, 1], [-1, 0], [-1, -1], [-1, 1], [1, 0], [1, -1], [1, 1]]
+    for image in images:
+        for i in range(6, -1, -1):
+            for pos in neighbors:
+                image_resize = cv2.resize(image, fx = 2**i, fy = 2**i)
+    return images
 
-def gaussian_hat(zmin, zmax, sigma = 3):
-    mean = zmin + (zmax - zmin) // 2
-    radius = zmax - mean
-    sigma = mean * 1.0 / sigma
-    def hat(z):
-        return zmax * np.exp(-0.5 * ((z - mean) / sigma)**2) + 1
-    return hat
+            

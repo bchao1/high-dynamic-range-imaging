@@ -5,6 +5,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from matplotlib import pyplot as plt
 from . import hat_functions as hat_func
+from . import alignment as align
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -102,7 +103,7 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
         image, exposure = read_image(f, image_dir, scale = scale)
         images.append(image)
         exposures.append(exposure)
-
+    images = align.alignment(images[0], images[1:])
     b = np.log(np.array(exposures, dtype = np.float32))
 
     image_height, image_width, _ = images[0].shape
