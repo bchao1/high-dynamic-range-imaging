@@ -1,0 +1,1 @@
+python3 main.py images/set_1/jpg results --scale 5
