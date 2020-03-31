@@ -26,28 +26,28 @@ def image_shift(image, pos, print=False):
         cv2.imwrite('test_shift{}.jpg'.format([x,y]), shifted_image[:,:,::-1])
     return shifted_image
 
-def alignment(images, std_img):
-    std_img_booleans = [image_to_boolean(std_img, percentile=50)]
+def alignment(images, std_img, align_num):
+    std_img_booleans = [image_to_boolean(std_img)]
     std_img_resize = [std_img]
     best_shifted_images = []
-    for i in range(1,6):
+    for i in range(1,align_num):
         std_img_resize.append( cv2.resize(std_img_resize[-1], dsize=(0,0), fx=0.5, fy=0.5) )
-        std_img_booleans.append( image_to_boolean( std_img_resize[-1], percentile=50 ) )
+        std_img_booleans.append( image_to_boolean( std_img_resize[-1]) )
 
     neighbors = np.array([[0, 0], [0, -1], [0, 1], [-1, 0], [-1, -1], [-1, 1], [1, 0], [1, -1], [1, 1]])
     for image in images:
         image_resize = [image]
-        for i in range(1,6):
+        for i in range(1,align_num):
             image_resize.append( cv2.resize(image_resize[-1], dsize=(0,0), fx=0.5, fy=0.5) )
         
         best_pos = np.array([0, 0])
-        for i in range(5, -1, -1): # for each size
+        for i in range(align_num-1, -1, -1): # for each size
             step = 2**i
             min_diff_neighbor = np.array(neighbors[0])
             min_diff = image.shape[0]*image.shape[1]
             for pos in neighbors:
                 shifted_image = image_shift(image_resize[ i ], np.add(best_pos/step, pos) )
-                shifted_image_booleans = image_to_boolean( shifted_image, percentile=50)
+                shifted_image_booleans = image_to_boolean( shifted_image)
                 diff = image_diff( std_img_booleans[i], shifted_image_booleans)
                 if diff < min_diff:
                     min_diff = diff

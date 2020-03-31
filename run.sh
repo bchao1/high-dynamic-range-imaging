@@ -1,1 +1,1 @@
-python3 main.py images/alignment results --scale 5
+python3 main.py images/alignment results --scale 1
