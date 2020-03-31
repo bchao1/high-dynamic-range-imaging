@@ -5,7 +5,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from matplotlib import pyplot as plt
 from . import hat_functions as hat_func
-from . import alignment as align
+from . import alignment
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -94,7 +94,7 @@ def get_radiance_map(images, g, exp, w):
     rad = np.average(E, axis=0, weights=w[images])
     return rad
 
-def hdr(image_dir, result_dir, hat_type, l, scale):
+def hdr(image_dir, result_dir, hat_type, l, scale, align):
     w = z_weights(hat = hat_type)
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
@@ -106,7 +106,8 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
         images.append(image)
         exposures.append(exposure)
     
-    images = align.alignment(images, images[len(images)//2], 6)
+    if align:
+        images = alignment.alignment(images, images[len(images) // 2], 6)
     b = np.log(np.array(exposures, dtype = np.float32))
 
     image_height, image_width, _ = images[0].shape

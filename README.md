@@ -73,11 +73,11 @@ def get_radiance_map(images, g, exp, w):
 
 最終得到的不同 channel 的 mapping function g，可以看到幾乎是完全吻合，解出了同一個 g：
 
-![img](./results/exposure.png)
+![img](./results/20.0_linear_align/exposure.png)
 
 Tone mapped 的影像：
 
-![img](./results/result.png)
+![img](./results/20.0_linear_align/result.png)
 
 ## 實驗
 
