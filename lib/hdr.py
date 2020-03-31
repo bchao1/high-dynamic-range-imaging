@@ -119,6 +119,5 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
         radiance_maps.append(r)
         plt.plot(g, range(256), colors[i])
     r_map = np.transpose(np.exp(np.stack(radiance_maps)), (1, 2, 0))
-
-    cv2.imwrite(os.path.join(result_dir, 'test.hdr'), r_map.astype(np.float32))
+    cv2.imwrite(os.path.join(result_dir, 'result.hdr'), r_map.astype(np.float32))
     plt.savefig(os.path.join(result_dir, 'exposure.png'))
