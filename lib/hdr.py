@@ -103,7 +103,8 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
         image, exposure = read_image(f, image_dir, scale = scale)
         images.append(image)
         exposures.append(exposure)
-    images = align.alignment(images, images[0])
+    
+    images = align.alignment(images, images[4])
     b = np.log(np.array(exposures, dtype = np.float32))
 
     image_height, image_width, _ = images[0].shape
