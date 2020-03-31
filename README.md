@@ -64,10 +64,10 @@ def get_radiance_map(images, g, exp, w):
 
 下面是我們拍攝的不同曝光時間的照片。
 
-| ![img](./images/set_1/jpg/IMG_6538.JPG) | ![img](./images/set_1/jpg/IMG_6539.JPG) | ![img](./images/set_1/jpg/IMG_6540.JPG) |
-| --------------------------------------- | --------------------------------------- | --------------------------------------- |
-| ![img](./images/set_1/jpg/IMG_6541.JPG) | ![img](./images/set_1/jpg/IMG_6542.JPG) | ![img](./images/set_1/jpg/IMG_6543.JPG) |
-| ![img](./images/set_1/jpg/IMG_6544.JPG) | ![img](./images/set_1/jpg/IMG_6545.JPG) | ![img](./images/set_1/jpg/IMG_6546.JPG) |
+| ![img](./images/shifted/IMG_6538.JPG) | ![img](./images/shifted/IMG_6539.JPG) | ![img](./images/shifted/IMG_6540.JPG) |
+| ------------------------------------- | ------------------------------------- | ------------------------------------- |
+| ![img](./images/shifted/IMG_6541.JPG) | ![img](./images/shifted/IMG_6542.JPG) | ![img](./images/shifted/IMG_6543.JPG) |
+| ![img](./images/shifted/IMG_6544.JPG) | ![img](./images/shifted/IMG_6545.JPG) | ![img](./images/shifted/IMG_6546.JPG) |
 
 我們選用的參數是 lambda = 20，然後 weighting function 就是 linear（就是論文中提到的函式，後面會跟我們自己寫的 sin, guassian weighting 函式作比較）。
 
@@ -98,7 +98,7 @@ Tone mapped 的影像：
 
 其實結果並沒有差非常多。
 
-### 使用不同 Lambda
+###  使用不同 Lambda
 
 我們嘗試使用不同的 lambda 來看看 objective 中平滑項和另一項的 tradeoff 關係。實驗中我們固定 weighting function 是 linear，並使用 Mantuik '06 來 tone map。
 
@@ -112,3 +112,14 @@ Tone mapped 的影像：
 | 50     | ![img](./tests/50.0_linear/exposure.png) | ![img](./tests/50.0_linear/result.png) |
 
 從上面的比較可以看出隨著 lambda 的增大，平滑項的影響也越來越大，因此曲線確實有越來越平滑。至於 tone mapped 以後的結果並無顯著的差別（但仔細觀察會發現 lambda 約大其實影像細節有比較清楚）。
+
+### 使用 Alignment
+
+我們也有另外時做了 MTB Alignment Algorithm，程式碼在 `lib.alignment`。下圖比較有無 alignment 的差別（我們固定 weight function 為 linear，lambda = 20）。
+
+|                | Result                                            |
+| -------------- | ------------------------------------------------- |
+| No Alignment   | ![img](./results/20.0_linear_no_align/result.png) |
+| With Alignment | ![img](./results/20.0_linear_align/result.png)    |
+
+ 
