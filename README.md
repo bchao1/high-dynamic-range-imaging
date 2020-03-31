@@ -24,7 +24,7 @@
 |     l      |            Debevec's Method 裡面的 lambda factor             | Optional |
 |   scale    | Downsample factor （有些照片太大會跑比較久，可以先縮小照片） | Optional |
 |    hat     |          Debevec's Method 裡面的 weighting function          | Optional |
-
+|   align    |          是否要使用 alignment algorithm（advised）           | Optional |
 有其他疑問可以執行` python3 main.py --help`。
 
 ## 演算法
