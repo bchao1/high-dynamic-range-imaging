@@ -2,11 +2,11 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt 
 
-def image_to_boolean(image, percentile=50, print=False):
+def image_to_boolean(image, percentile=50, _print=False):
     image_rbg_sum = np.sum(image, axis=2)
     image_threshold = np.percentile(image_rbg_sum, percentile)
     image_boolean = ( image_rbg_sum >= image_threshold )
-    if print :
+    if _print :
         h, w = image_boolean.shape
         image_test = np.zeros((h, w, 3))
         image_test[:,:,0] = image_boolean*255
@@ -17,12 +17,12 @@ def image_to_boolean(image, percentile=50, print=False):
 
 def image_diff(image_bool1, image_bool2):
     return np.sum( np.logical_xor( image_bool1, image_bool2) )
-def image_shift(image, pos, print=False):
+def image_shift(image, pos, _print=False):
     h, w, _ = image.shape
     x, y = pos
     M = np.float32([[1,0,x],[0,1,y]])
     shifted_image = cv2.warpAffine(image, M, (w, h))
-    if print :
+    if _print :
         cv2.imwrite('test_shift{}.jpg'.format([x,y]), shifted_image[:,:,::-1])
     return shifted_image
 

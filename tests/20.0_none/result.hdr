@@ -1,4 +1,4 @@
-#?RGBE
+#?RADIANCE
 FORMAT=32-bit_rle_rgbe
 
 -Y 691 +X 1036

@@ -94,6 +94,14 @@ def get_radiance_map(images, g, exp, w):
     rad = np.average(E, axis=0, weights=w[images])
     return rad
 
+def print_radiance_map(rads, result_dir='.', colors = ['r', 'g', 'b']):
+    for i, rad in enumerate(rads):
+        plt.figure()
+        plt.imshow(rad, cmap = plt.cm.jet )
+        plt.colorbar()
+        plt.savefig(os.path.join(result_dir, 'radiance_map_{}.png'.format(colors[i])))
+        plt.close()
+
 def hdr(image_dir, result_dir, hat_type, l, scale):
     w = z_weights(hat = hat_type)
     if not os.path.exists(result_dir):
@@ -111,7 +119,6 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
 
     image_height, image_width, _ = images[0].shape
     pixel_positions = sample_pixels(image_height, image_width)
-
     radiance_maps = []
     colors = ['r', 'g', 'b']
     plt.figure()
@@ -119,9 +126,10 @@ def hdr(image_dir, result_dir, hat_type, l, scale):
         channels = [img[:,:,i] for img in images] # ith channel of each image
         z = get_z(channels, pixel_positions)
         g = solve_debevec(z, b, w, l) # retrieve mapping function
-        r = get_radiance_map(channels, g, b, w) # retrieve channel-wise radiance map
+        r = get_radiance_map(channels, g, b, w ) # retrieve channel-wise radiance map
         radiance_maps.append(r)
         plt.plot(g, range(256), colors[i])
+    print_radiance_map(radiance_maps, result_dir, colors)
     r_map = np.transpose(np.exp(np.stack(radiance_maps)), (1, 2, 0))
     cv2.imwrite(os.path.join(result_dir, 'result.hdr'), r_map.astype(np.float32))
     plt.savefig(os.path.join(result_dir, 'exposure.png'))
