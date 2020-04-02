@@ -1,1 +1,2 @@
-python3 main.py images/set_1/jpg tests --scale 1 --hat linear -l 20
+# Use images/no_shift for input directory to test alignment
+python3 main.py images/no_shift results/ --scale 5 --hat linear -l 20 

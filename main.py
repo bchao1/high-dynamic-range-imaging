@@ -10,7 +10,8 @@ if __name__ == '__main__':
     parser.add_argument('--scale', type = float, help = 'Downscaling factor of image.', default = 1)
     parser.add_argument('--hat', type = str, help = 'Hatting function for pixel values', 
         choices = ['gaussian', 'linear', 'sin', 'none'], default = 'linear')
+    parser.add_argument('--align', action = 'store_true')
     args = parser.parse_args()
-    sesssion_dir = '{}_{}'.format(args.l, args.hat)
-    output_dir = os.path.join(args.output_dir, sesssion_dir)
-    hdr(args.input_dir, output_dir, args.hat, args.l, args.scale)
+    session_dir = '{}_{}_{}'.format(args.l, args.hat, 'align' if args.align else 'no_align')
+    output_dir = os.path.join(args.output_dir, session_dir)
+    hdr(args.input_dir, output_dir, args.hat, args.l, args.scale, args.align)
